@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>Identificador de Objetos</title>
+
+  <!-- TensorFlow.js -->
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest"></script>
+  <!-- Teachable Machine Image -->
+  <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@latest"></script>
+
+  <style>
+    body {
+      margin: 0;
+      height: 100vh;
+      background: #0f172a;
+      color: #e5e7eb;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .card {
+      background: #020617;
+      padding: 24px;
+      border-radius: 16px;
+      box-shadow: 0 20px 40px rgba(0,0,0,.4);
+      text-align: center;
+      width: 340px;
+    }
+
+    h1 {
+      font-size: 20px;
+      margin-bottom: 16px;
+    }
+
+    video, canvas {
+      border-radius: 12px;
+      margin-top: 12px;
+    }
+
+    button {
+      margin-top: 16px;
+      padding: 10px 16px;
+      border: none;
+      border-radius: 10px;
+      background: #2563eb;
+      color: white;
+      font-size: 14px;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background: #1d4ed8;
+    }
+
+    .result {
+      margin-top: 16px;
+      font-size: 18px;
+      font-weight: bold;
+    }
+
+    .confidence {
+      margin-top: 4px;
+      font-size: 14px;
+      color: #94a3b8;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="card">
+    <h1>Identificador de Objetos</h1>
+    <div id="webcam-container"></div>
+
+    <button onclick="init()">Iniciar cámara</button>
+
+    <div class="result" id="result">Esperando...</div>
+    <div class="confidence" id="confidence"></div>
+  </div>
+
+  <script>
+    const URL = "https://teachablemachine.withgoogle.com/models/J7tI4wiBt/";
+
+    let model, webcam, maxPredictions;
+
+    async function init() {
+      const modelURL = URL + "model.json";
+      const metadataURL = URL + "metadata.json";
+
+      model = await tmImage.load(modelURL, metadataURL);
+      maxPredictions = model.getTotalClasses();
+
+      webcam = new tmImage.Webcam(300, 300, true);
+      await webcam.setup();
+      await webcam.play();
+
+      document.getElementById("webcam-container").appendChild(webcam.canvas);
+      window.requestAnimationFrame(loop);
+    }
+
+    async function loop() {
+      webcam.update();
+      await predict();
+      window.requestAnimationFrame(loop);
+    }
+
+    async function predict() {
+      const prediction = await model.predict(webcam.canvas);
+
+      let best = prediction[0];
+      for (let i = 1; i < prediction.length; i++) {
+        if (prediction[i].probability > best.probability) {
+          best = prediction[i];
+        }
+      }
+
+      document.getElementById("result").innerText =
+        best.className;
+
+      document.getElementById("confidence").innerText =
+        `Confianza: ${(best.probability * 100).toFixed(1)}%`;
+    }
+  </script>
+</body>
+</html>
