@@ -1,26 +1,125 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <title>Test Cámara</title>
+  <meta charset="UTF-8" />
+  <title>Identificador de Objetos</title>
+
+  <!-- TensorFlow.js -->
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest"></script>
+  <!-- Teachable Machine -->
+  <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@latest"></script>
+
+  <style>
+    body {
+      margin: 0;
+      height: 100vh;
+      background: #0f172a;
+      color: #e5e7eb;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .card {
+      background: #020617;
+      padding: 24px;
+      border-radius: 16px;
+      width: 340px;
+      text-align: center;
+      box-shadow: 0 20px 40px rgba(0,0,0,.4);
+    }
+
+    video {
+      width: 300px;
+      border-radius: 12px;
+      margin-top: 12px;
+    }
+
+    button {
+      margin-top: 16px;
+      padding: 10px 16px;
+      border: none;
+      border-radius: 10px;
+      background: #2563eb;
+      color: white;
+      cursor: pointer;
+    }
+
+    .result {
+      margin-top: 16px;
+      font-size: 18px;
+      font-weight: bold;
+    }
+
+    .confidence {
+      font-size: 14px;
+      color: #94a3b8;
+    }
+  </style>
 </head>
+
 <body>
-  <h2>Prueba de cámara</h2>
-  <video id="video" autoplay playsinline width="300"></video>
+  <div class="card">
+    <h2>Identificador de Objetos</h2>
+
+    <video id="video" autoplay playsinline></video>
+
+    <button id="startBtn">Iniciar detección</button>
+
+    <div class="result" id="result">Esperando…</div>
+    <div class="confidence" id="confidence"></div>
+  </div>
 
   <script>
-    async function startCamera() {
+    const URL = "https://teachablemachine.withgoogle.com/models/J7tI4wiBt/";
+
+    let model;
+    let video;
+    let stream;
+
+    document.getElementById("startBtn").addEventListener("click", init);
+
+    async function init() {
       try {
-        const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-        document.getElementById("video").srcObject = stream;
-        console.log("Cámara OK");
-      } catch (e) {
-        console.error("ERROR cámara:", e);
-        alert(e.name + ": " + e.message);
+        await tf.ready();
+
+        model = await tmImage.load(
+          URL + "model.json",
+          URL + "metadata.json"
+        );
+
+        video = document.getElementById("video");
+
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: "environment" }
+        });
+
+        video.srcObject = stream;
+
+        video.onloadeddata = () => {
+          requestAnimationFrame(loop);
+        };
+
+      } catch (err) {
+        alert("Error accediendo a la cámara");
+        console.error(err);
       }
     }
 
-    startCamera();
+    async function loop() {
+      const predictions = await model.predict(video);
+
+      let best = predictions.reduce((a, b) =>
+        a.probability > b.probability ? a : b
+      );
+
+      document.getElementById("result").innerText = best.className;
+      document.getElementById("confidence").innerText =
+        `Confianza: ${(best.probability * 100).toFixed(1)}%`;
+
+      requestAnimationFrame(loop);
+    }
   </script>
 </body>
 </html>
