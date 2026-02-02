@@ -4,10 +4,11 @@
   <meta charset="UTF-8" />
   <title>Identificador de Objetos</title>
 
-  <!-- TensorFlow.js -->
-  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest"></script>
-  <!-- Teachable Machine -->
-  <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@latest"></script>
+  <!-- TensorFlow.js (versión estable) -->
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@3.21.0/dist/tf.min.js"></script>
+
+  <!-- Teachable Machine Image (expone tmImage correctamente) -->
+  <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@0.8/dist/teachablemachine-image.min.js"></script>
 
   <style>
     body {
@@ -30,10 +31,15 @@
       box-shadow: 0 20px 40px rgba(0,0,0,.4);
     }
 
+    h2 {
+      margin-bottom: 12px;
+    }
+
     video {
       width: 300px;
       border-radius: 12px;
       margin-top: 12px;
+      background: black;
     }
 
     button {
@@ -44,6 +50,11 @@
       background: #2563eb;
       color: white;
       cursor: pointer;
+      font-size: 14px;
+    }
+
+    button:hover {
+      background: #1d4ed8;
     }
 
     .result {
@@ -63,7 +74,7 @@
   <div class="card">
     <h2>Identificador de Objetos</h2>
 
-    <video id="video" autoplay playsinline></video>
+    <video id="video" autoplay muted playsinline></video>
 
     <button id="startBtn">Iniciar detección</button>
 
@@ -72,11 +83,10 @@
   </div>
 
   <script>
-    const URL = "https://teachablemachine.withgoogle.com/models/J7tI4wiBt/";
+    const MODEL_URL = "https://teachablemachine.withgoogle.com/models/J7tI4wiBt/";
 
     let model;
     let video;
-    let stream;
 
     document.getElementById("startBtn").addEventListener("click", init);
 
@@ -85,25 +95,25 @@
         await tf.ready();
 
         model = await tmImage.load(
-          URL + "model.json",
-          URL + "metadata.json"
+          MODEL_URL + "model.json",
+          MODEL_URL + "metadata.json"
         );
 
         video = document.getElementById("video");
 
-        stream = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode: "environment" }
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: "environment" },
+          audio: false
         });
 
         video.srcObject = stream;
+        await video.play();
 
-        video.onloadeddata = () => {
-          requestAnimationFrame(loop);
-        };
+        requestAnimationFrame(loop);
 
       } catch (err) {
-        alert("Error accediendo a la cámara");
-        console.error(err);
+        console.error("ERROR DE CÁMARA:", err);
+        alert(err.name + ": " + err.message);
       }
     }
 
