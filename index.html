@@ -1,140 +1,26 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8" />
-  <title>Identificador de Objetos</title>
-
-  <!-- TensorFlow.js -->
-  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest"></script>
-  <!-- Teachable Machine Image -->
-  <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@latest"></script>
-
-  <style>
-    body {
-      margin: 0;
-      height: 100vh;
-      background: #0f172a;
-      color: #e5e7eb;
-      font-family: system-ui, -apple-system, BlinkMacSystemFont;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-
-    .card {
-      background: #020617;
-      padding: 24px;
-      border-radius: 16px;
-      box-shadow: 0 20px 40px rgba(0,0,0,.4);
-      text-align: center;
-      width: 340px;
-    }
-
-    h1 {
-      font-size: 20px;
-      margin-bottom: 16px;
-    }
-
-    canvas {
-      border-radius: 12px;
-      margin-top: 12px;
-    }
-
-    button {
-      margin-top: 16px;
-      padding: 10px 16px;
-      border: none;
-      border-radius: 10px;
-      background: #2563eb;
-      color: white;
-      font-size: 14px;
-      cursor: pointer;
-    }
-
-    button:hover {
-      background: #1d4ed8;
-    }
-
-    .result {
-      margin-top: 16px;
-      font-size: 18px;
-      font-weight: bold;
-    }
-
-    .confidence {
-      margin-top: 4px;
-      font-size: 14px;
-      color: #94a3b8;
-    }
-  </style>
+  <meta charset="UTF-8">
+  <title>Test Cámara</title>
 </head>
-
 <body>
-  <div class="card">
-    <h1>Identificador de Objetos</h1>
-
-    <div id="webcam-container"></div>
-
-    <button id="startBtn">Iniciar cámara</button>
-
-    <div class="result" id="result">Esperando…</div>
-    <div class="confidence" id="confidence"></div>
-  </div>
+  <h2>Prueba de cámara</h2>
+  <video id="video" autoplay playsinline width="300"></video>
 
   <script>
-    const URL = "https://teachablemachine.withgoogle.com/models/J7tI4wiBt/";
-
-    let model, webcam;
-
-    document.getElementById("startBtn").addEventListener("click", init);
-
-    async function init() {
+    async function startCamera() {
       try {
-        // Asegura que TF esté listo
-        await tf.ready();
-
-        const modelURL = URL + "model.json";
-        const metadataURL = URL + "metadata.json";
-
-        model = await tmImage.load(modelURL, metadataURL);
-
-        webcam = new tmImage.Webcam(300, 300, true);
-
-        // 🔑 Forzamos configuración compatible
-        await webcam.setup({
-          facingMode: "environment" // usa cámara correcta
-        });
-
-        await webcam.play();
-
-        document.getElementById("webcam-container").innerHTML = "";
-        document.getElementById("webcam-container").appendChild(webcam.canvas);
-
-        window.requestAnimationFrame(loop);
-
-      } catch (err) {
-        alert("No se pudo acceder a la cámara");
-        console.error("ERROR CÁMARA:", err);
+        const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+        document.getElementById("video").srcObject = stream;
+        console.log("Cámara OK");
+      } catch (e) {
+        console.error("ERROR cámara:", e);
+        alert(e.name + ": " + e.message);
       }
     }
 
-    async function loop() {
-      webcam.update();
-      await predict();
-      window.requestAnimationFrame(loop);
-    }
-
-    async function predict() {
-      const predictions = await model.predict(webcam.canvas);
-
-      let best = predictions.reduce((a, b) =>
-        a.probability > b.probability ? a : b
-      );
-
-      document.getElementById("result").innerText = best.className;
-      document.getElementById("confidence").innerText =
-        `Confianza: ${(best.probability * 100).toFixed(1)}%`;
-    }
+    startCamera();
   </script>
 </body>
 </html>
